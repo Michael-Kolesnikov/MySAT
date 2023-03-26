@@ -2,32 +2,38 @@
 {
     public static class SAT
     {
-        // DIMACS format
-        // p cnf 3 2
-        // 1 -3 0
-        // 2 3 -1 0
-        // p cnf [number of variables] [number of clauses]
-        // [positive literal] [negative literal] [end of clause]
-        // [positive literal] [positive literal] [negative literal] [end of clause]
-        // set of clauses(element is list of a literals)
         private static int numberOfVariables;
 
-        public static void Start(int numberOfVariables)
+        public static void Start(string file)
         {
-            SAT.numberOfVariables = numberOfVariables;
+            Console.WriteLine(DPLL(ParseDIMACS(file)));
+        }
 
-            // List<List<int?>> clauses = new List<List<int?>> {
-            //    new List<int?>() { 1, 2, 3 },
-            //    new List<int?>() { 1, 2, -3 },
-            //    new List<int?>() { 1, -2, 3 },
-            //    new List<int?>() { -1, 2, 3 },
-            //    new List<int?>() { -1, -2, 3 },
-            //    new List<int?>() { -1, 2, -3},
-            //    new List<int?>() { 1, -2, -3 },
-            //    new List<int?>() { -1, -2, -3 }
-            // };
-            // numberOfVariables = 2;
-            // Console.WriteLine(DPLL(clauses));
+        private static List<List<int?>> ParseDIMACS(string file)
+        {
+            List<List<int?>> clauses = new();
+
+            // Line Breaking
+            var lines = file.Split('\n');
+
+            // Get number of variables
+            SAT.numberOfVariables = int.Parse(lines[1].Split(' ')[2]);
+
+            // Get clauses
+            for (var i = 2; i < lines.Length; i++)
+            {
+                List<int?> clause = new();
+                var clauseElements = lines[i].Split(' ').ToList();
+                clauseElements.Remove("0");
+                for (var j = 0; j < clauseElements.Count; j++)
+                {
+                    clause.Add(int.Parse(clauseElements[j]));
+                }
+
+                clauses.Add(clause);
+            }
+
+            return clauses;
         }
 
         private static bool DPLL(List<List<int?>> clauses)
