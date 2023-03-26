@@ -4,7 +4,7 @@
     {
         public static void Main()
         {
-            Console.WriteLine("Hello, Worl2d!");
+            SAT.Start(3);
         }
     }
 }
