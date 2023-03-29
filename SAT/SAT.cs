@@ -1,4 +1,8 @@
-﻿namespace MySAT
+﻿// <copyright file="SAT.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
+
+namespace MySAT
 {
     public static class SAT
     {
@@ -6,7 +10,7 @@
         {
             List<List<int>> clauses = ParseDIMACS(path);
             List<int> assignement = new();
-            if (DPLL(clauses, assignement)) 
+            if (DPLL(clauses, assignement))
             {
                 return new string[] { "SAT", string.Join(' ', assignement) };
 
@@ -15,23 +19,6 @@
             {
                 return new string[] { "UNSAT" };
             }
-        }
-
-        private static List<List<int>> ParseDIMACS(string path)
-        {
-            List<List<int>> clauses;
-            using (var streamReader = new StreamReader(path))
-            {
-                clauses = new List<List<int>>();
-                string? line;
-                while ((line = streamReader.ReadLine()) != null)
-                {
-                    if (line[0] == 'c') continue;
-                    if (line[0] == 'p') continue;
-                    clauses.Add(new List<int>(line.Split(' ').Where(c => c != string.Empty && c != "0").Select(c => int.Parse(c)).ToList()));
-                }
-            }
-            return clauses;
         }
 
         public static bool DPLL(List<List<int>> clauses, List<int> assignment)
@@ -70,7 +57,7 @@
                 clausesAddTrue.Add(new List<int>(clause));
             }
 
-            clausesAddTrue.Add(new List<int> { chosenLiteral});
+            clausesAddTrue.Add(new List<int> { chosenLiteral });
             if (DPLL(clausesAddTrue, assignment)) return true;
 
             foreach (var clause in clauses)
@@ -81,6 +68,22 @@
             if (DPLL(clausesAddFalse, assignment)) return true;
 
             return false;
+        }
+        private static List<List<int>> ParseDIMACS(string path)
+        {
+            List<List<int>> clauses;
+            using (var streamReader = new StreamReader(path))
+            {
+                clauses = new List<List<int>>();
+                string? line;
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    if (line[0] == 'c') continue;
+                    if (line[0] == 'p') continue;
+                    clauses.Add(new List<int>(line.Split(' ').Where(c => c != string.Empty && c != "0").Select(c => int.Parse(c)).ToList()));
+                }
+            }
+            return clauses;
         }
     }
 }
