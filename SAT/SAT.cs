@@ -1,138 +1,68 @@
-﻿namespace SAT
+﻿namespace MySAT
 {
     public static class SAT
     {
-        private static int numberOfVariables;
-
-        public static void Start(string file)
+        public static string Start(string path)
         {
-            if (DPLL(ParseDIMACS(file)))
-                Console.WriteLine("SAT");
-            else
-                Console.WriteLine("UNSAT");
+            List<List<int>> clauses = ParseDIMACS(path);
+            var output = DPLL(clauses) ? "SAT" : "UNSAT";
+            return output;
         }
 
-        private static List<List<int?>> ParseDIMACS(string file)
+        private static List<List<int>> ParseDIMACS(string path)
         {
-            List<List<int?>> clauses = new();
-
-            // Line Breaking
-            var lines = file.Split('\n');
-
-            // Get number of variables
-            SAT.numberOfVariables = int.Parse(lines[1].Split(' ')[2]);
-
-            // Get clauses
-            for (var i = 2; i < lines.Length; i++)
+            List<List<int>> clauses;
+            using (var streamReader = new StreamReader(path))
             {
-                List<int?> clause = new();
-                var clauseElements = lines[i].Split(' ').ToList();
-                clauseElements.Remove("0");
-                for (var j = 0; j < clauseElements.Count; j++)
-                    clause.Add(int.Parse(clauseElements[j]));
-
-                clauses.Add(clause);
+                clauses = new List<List<int>>();
+                string? line;
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    if (line[0] == 'c') continue;
+                    if (line[0] == 'p') continue;
+                    clauses.Add(new List<int>(line.Split(' ').Where(c => c != string.Empty && c != "0").Select(c => int.Parse(c)).ToList()));
+                }
             }
-
             return clauses;
         }
 
-        private static bool DPLL(List<List<int?>> clauses)
+        public static bool DPLL(List<List<int>> clauses)
         {
-            // unit-propagate
-            while (true)
+            // Unit propagation
+            List<int> unitLiterals = clauses.Where(clause => clause.Count == 1).Select(c => c[0]).ToList();
+            unitLiterals.ForEach(literal =>
             {
-                int singleLiteral = 0;
+                clauses.RemoveAll(clause => clause.Contains(literal));
+                clauses.ForEach(clause => clause.Remove(-literal));
+            });
+            // Pure literals elimination
 
-                // find singleLiteral
-                foreach (var clause in clauses)
-                {
-                    if (clause.Count != 1 && clause[0] != null) continue;
-                    singleLiteral = clause[0] ?? 0;
-                    break;
-                }
+            // Find all literals in the clauses
+            var literals = clauses.SelectMany(c => c).Distinct().ToList();
 
-                // if singleLiteral is not found break
-                if (singleLiteral == 0) break;
+            // Find all pure literals in the clauses
+            var pureLiterals = literals.GroupBy(l => Math.Abs(l)).Where(g => g.Count() == 1).SelectMany(g => g).ToList();
 
-                // remove clause if contains literal, remove -literal if contains -literal
-                var clausesLength = clauses.Count;
-                var clausesOffset = 0;
-                for (var i = 0; i < clausesLength; i++, clausesOffset++)
-                {
-                    var clause = clauses[clausesOffset];
-                    if (clause.Contains(singleLiteral))
-                    {
-                        clauses.Remove(clause);
-                        clausesOffset--;
-                    }
+            // Delete clauses contained pure literals
+            pureLiterals.ForEach(literal => clauses.RemoveAll(clause => clause.Contains(literal)));
 
-                    if (clause.Contains(-singleLiteral))
-                        // if clause contains single -literal it's mean that clauses contains a and not a, this is lead to unsat. To define that clause must contains null element
-                        if (clause.Count == 1)
-                        {
-                            clause.Clear();
-                            clause.Add(null);
-                        }
-                        else
-                            clause.Remove(-singleLiteral);
-                }
-            }
+            // Check for empty clause
+            if (clauses.Any(clause => clause.Count == 0)) return false;
 
-            // pure-literal-assign
-            // looking for the same literals
-            List<int> sameLiterals = new();
-            for (var i = 1; i <= numberOfVariables; i++)
+            // Check for no clause left
+            if (clauses.Count == 0) return true;
+
+            var chosenLiteral = clauses.SelectMany(c => c).FirstOrDefault();
+            var clausesAddTrue = new List<List<int>>(clauses)
             {
-                var literal = i;
-                var isContains = false;
-                var isContainsInv = false;
-                foreach (var clause in clauses)
-                {
-                    if (clause.Contains(literal))
-                        isContains = true;
-                    if (clause.Contains(-literal))
-                        isContainsInv = true;
-                }
-
-                if (isContains ^ isContainsInv)
-                    sameLiterals.Add(literal);
-            }
-
-            if (sameLiterals.Count != 0 && clauses.Count != 1)
-                for (var i = 0; i < sameLiterals.Count; i++)
-                {
-                    var literal = sameLiterals[i];
-                    foreach (var clause in clauses)
-                        if (clause.Contains(literal))
-                            clause.Remove(literal);
-                }
-
-            // if clauses is empty then return true(SAT)
-            if (clauses.Count == 0)
-                return true;
-
-            // if set of clauses contains nill
-            foreach (var clause in clauses)
-                if (clause.Contains(null))
-                    return false;
-
-            // choose unassigned literal
-            var chosenLiteral = 0;
-            foreach (var clause in clauses)
-                if (clause.Count != 0 && clause[0] is not null)
-                {
-                    chosenLiteral = clause[0] ?? 0;
-                    break;
-                }
-
-            // try assigning the chosen literal to true
-            var extendedTrueClauses = new List<List<int?>>(clauses) { new List<int?>() { chosenLiteral } };
-            if (DPLL(extendedTrueClauses)) return true;
-
-            // try assigning the chosen literal to false
-            var extendedFalseClauses = new List<List<int?>>(clauses) { new List<int?>() { -chosenLiteral } };
-            if (DPLL(extendedFalseClauses)) return true;
+                new List<int> { chosenLiteral }
+            };
+            if (DPLL(clausesAddTrue)) return true;
+            var clausesAddFalse = new List<List<int>>(clauses)
+            {
+                new List<int> { -chosenLiteral }
+            };
+            if (DPLL(clausesAddFalse)) return true;
 
             return false;
         }
