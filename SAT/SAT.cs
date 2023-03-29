@@ -2,19 +2,11 @@
 {
     public static class SAT
     {
-        public static string[] Start(string path)
+        public static string Start(string path)
         {
             List<List<int>> clauses = ParseDIMACS(path);
-            List<int> assignement = new();
-            if (DPLL(clauses, assignement)) 
-            {
-                return new string[] { "SAT", string.Join(' ', assignement) };
-
-            }
-            else
-            {
-                return new string[] { "UNSAT" };
-            }
+            var output = DPLL(clauses) ? "SAT" : "UNSAT";
+            return output;
         }
 
         private static List<List<int>> ParseDIMACS(string path)
@@ -34,7 +26,7 @@
             return clauses;
         }
 
-        public static bool DPLL(List<List<int>> clauses, List<int> assignment)
+        public static bool DPLL(List<List<int>> clauses)
         {
             // Unit propagation
             List<int> unitLiterals = clauses.Where(clause => clause.Count == 1).Select(c => c[0]).ToList();
@@ -43,15 +35,14 @@
                 clauses.RemoveAll(clause => clause.Contains(literal));
                 clauses.ForEach(clause => clause.Remove(-literal));
             });
-            assignment.AddRange(unitLiterals);
-
             // Pure literals elimination
 
             // Find all literals in the clauses
             var literals = clauses.SelectMany(c => c).Distinct().ToList();
+
             // Find all pure literals in the clauses
             var pureLiterals = literals.GroupBy(l => Math.Abs(l)).Where(g => g.Count() == 1).SelectMany(g => g).ToList();
-            assignment.AddRange(pureLiterals);
+
             // Delete clauses contained pure literals
             pureLiterals.ForEach(literal => clauses.RemoveAll(clause => clause.Contains(literal)));
 
@@ -62,23 +53,16 @@
             if (clauses.Count == 0) return true;
 
             var chosenLiteral = clauses.SelectMany(c => c).FirstOrDefault();
-            var clausesAddTrue = new List<List<int>>();
-            var clausesAddFalse = new List<List<int>>();
-            var assigmentCopy = new List<int>(assignment);
-            foreach (var clause in clauses)
+            var clausesAddTrue = new List<List<int>>(clauses)
             {
-                clausesAddTrue.Add(new List<int>(clause));
-            }
-
-            clausesAddTrue.Add(new List<int> { chosenLiteral});
-            if (DPLL(clausesAddTrue, assignment)) return true;
-
-            foreach (var clause in clauses)
+                new List<int> { chosenLiteral }
+            };
+            if (DPLL(clausesAddTrue)) return true;
+            var clausesAddFalse = new List<List<int>>(clauses)
             {
-                clausesAddFalse.Add(new List<int>(clause));
-            }
-            clausesAddFalse.Add(new List<int> { -chosenLiteral });
-            if (DPLL(clausesAddFalse, assignment)) return true;
+                new List<int> { -chosenLiteral }
+            };
+            if (DPLL(clausesAddFalse)) return true;
 
             return false;
         }

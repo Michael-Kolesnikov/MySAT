@@ -1,20 +1,10 @@
-﻿namespace MySAT
+﻿namespace SAT
 {
     public class Program
     {
         public static void Main()
         {
-            List<List<int>> clauses = new List<List<int>> {
-            new List<int> { -1, -2, 3 },
-            new List<int> { 2, 3 },
-            new List<int> { 9, 2, -3 },
-            new List<int> { -1, 2, -6 },
-            new List<int> { 7, 2, 3 },
-            new List<int> { -1, 4, -5 },
-            new List<int> { -1, 2, 3 },
-            new List<int> { -1, 2, 6 },
-            new List<int> { 1, 5, 3 },
-            };
+            SAT.Start("c A sample .cnf file.\np cnf 2 4\n1 2 0\n1 -2 0\n-1 -2 0\n-1 2 0");
         }
     }
 }
