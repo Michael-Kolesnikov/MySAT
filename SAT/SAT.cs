@@ -1,8 +1,4 @@
-﻿// <copyright file="SAT.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
-namespace MySAT
+﻿namespace MySAT
 {
     public static class SAT
     {
@@ -13,7 +9,6 @@ namespace MySAT
             if (DPLL(clauses, assignement))
             {
                 return new string[] { "SAT", string.Join(' ', assignement) };
-
             }
             else
             {
@@ -32,8 +27,6 @@ namespace MySAT
             });
             assignment.AddRange(unitLiterals);
 
-            // Pure literals elimination
-
             // Find all literals in the clauses
             var literals = clauses.SelectMany(c => c).Distinct().ToList();
             // Find all pure literals in the clauses
@@ -50,22 +43,20 @@ namespace MySAT
 
             var chosenLiteral = clauses.SelectMany(c => c).FirstOrDefault();
             var clausesAddTrue = new List<List<int>>();
-            var clausesAddFalse = new List<List<int>>();
-            var assigmentCopy = new List<int>(assignment);
-            foreach (var clause in clauses)
-            {
-                clausesAddTrue.Add(new List<int>(clause));
-            }
-
+            var assignmentCopy = new List<int>(assignment);
+            clauses.ForEach(clause => clausesAddTrue.Add(new List<int>(clause)));
             clausesAddTrue.Add(new List<int> { chosenLiteral });
-            if (DPLL(clausesAddTrue, assignment)) return true;
-
-            foreach (var clause in clauses)
+            if (DPLL(clausesAddTrue, assignmentCopy))
             {
-                clausesAddFalse.Add(new List<int>(clause));
+                return true;
             }
+            var clausesAddFalse = new List<List<int>>();
+            clauses.ForEach(clause => clausesAddFalse.Add(new List<int>(clause)));
             clausesAddFalse.Add(new List<int> { -chosenLiteral });
-            if (DPLL(clausesAddFalse, assignment)) return true;
+            if (DPLL(clausesAddFalse, assignmentCopy))
+            {
+                return true;
+            }
 
             return false;
         }
