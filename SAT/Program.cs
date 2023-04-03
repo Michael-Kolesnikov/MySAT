@@ -4,7 +4,8 @@
     {
         public static void Main()
         {
-            List<List<int>> clauses = new List<List<int>> {
+            List<List<int>> clauses = new()
+            {
             new List<int> { -1, -2, 3 },
             new List<int> { 2, 3 },
             new List<int> { 9, 2, -3 },
